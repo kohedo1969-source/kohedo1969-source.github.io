@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demokratie‑Werte‑Quiz (12–16)</title>
+  <style>
+    :root{
+      --bg:#0f172a; /* slate-900 */
+      --card:#111827; /* gray-900 */
+      --muted:#94a3b8; /* slate-400 */
+      --text:#e5e7eb; /* gray-200 */
+      --accent:#22d3ee; /* cyan-400 */
+      --good:#10b981; /* emerald */
+      --warn:#f59e0b; /* amber */
+      --bad:#ef4444; /* red */
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Inter,Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#0f172a 35%,#0b1220);color:var(--text);}    
+    .wrap{max-width:1000px;margin:0 auto;padding:24px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:16px}
+    h1{font-size:clamp(1.4rem,2.5vw,2.2rem);margin:0;line-height:1.2}
+    .card{background:rgba(17,24,39,.9);border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 30px rgba(0,0,0,.35);border-radius:16px;padding:18px;margin:14px 0}
+    .intro{color:var(--muted)}
+    .section{margin-top:8px}
+    .section h2{font-size:1.05rem;margin:0 0 8px;color:#cbd5e1}
+    .question{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:rgba(2,6,23,.35);margin:8px 0}
+    .q-text{font-weight:500}
+    .scale{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .scale label{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px;cursor:pointer}
+    .scale input{accent-color:var(--accent)}
+    .legend{font-size:.9rem;color:var(--muted)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    button{appearance:none;border:1px solid rgba(255,255,255,.15);background:linear-gradient(180deg,rgba(34,211,238,.15),rgba(34,211,238,.05));color:var(--text);padding:10px 14px;border-radius:12px;font-size:1rem;cursor:pointer}
+    button.primary{border-color:transparent;background:linear-gradient(180deg,#22d3ee,#06b6d4);color:#002b36;font-weight:700}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .results{display:none}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-weight:700}
+    .badge.good{background:rgba(16,185,129,.2);color:#bbf7d0;border:1px solid rgba(16,185,129,.35)}
+    .badge.warn{background:rgba(245,158,11,.18);color:#fde68a;border:1px solid rgba(245,158,11,.35)}
+    .badge.bad{background:rgba(239,68,68,.2);color:#fecaca;border:1px solid rgba(239,68,68,.35)}
+    .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+    .scorecard{border:1px solid rgba(255,255,255,.06);background:rgba(2,6,23,.35);border-radius:14px;padding:12px}
+    .scorecard h3{margin:0 0 6px;font-size:1rem}
+    .foot{margin-top:24px;font-size:.9rem;color:var(--muted)}
+    details{border:1px solid rgba(255,255,255,.08);background:rgba(15,23,42,.5);border-radius:12px;padding:10px}
+    summary{cursor:pointer;font-weight:600}
+    .small{font-size:.9rem;color:var(--muted)}
+    .print-hint{font-size:.9rem;color:var(--muted)}
+    @media print{
+      header,.actions{display:none}
+      body{background:#fff;color:#000}
+      .card{background:#fff;border-color:#ddd;box-shadow:none}
+      .question{background:#fff}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Demokratie‑Werte‑Quiz (12–16)</h1>
+      <div class="print-hint">Speichere als PDF: <kbd>Strg/Cmd</kbd> + <kbd>P</kbd></div>
+    </header>
+
+    <div class="card">
+      <p class="intro">Dieses Quiz hilft dir herauszufinden, wie wichtig dir demokratische Werte sind. Es gibt keine richtigen oder falschen Antworten. Sei ehrlich. Wähle je Frage eine Zahl von <strong>1</strong> (stimme gar nicht zu) bis <strong>5</strong> (stimme voll zu).</p>
+      <p class="legend">Tipp: Du kannst das Ergebnis am Ende speichern oder ausdrucken.</p>
+    </div>
+
+    <form id="quiz" class="card"></form>
+
+    <div class="actions">
+      <button class="primary" id="submitBtn" type="button">Auswertung anzeigen</button>
+      <button id="resetBtn" type="button">Antworten zurücksetzen</button>
+      <button id="printBtn" type="button">Drucken / als PDF speichern</button>
+    </div>
+
+    <section id="results" class="card results" aria-live="polite">
+      <h2>Deine Auswertung</h2>
+      <p id="overall"></p>
+      <div id="badges" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div class="score-grid" id="scoreGrid"></div>
+      <div id="feedback"></div>
+      <div class="foot">Hinweis: Diese Auswertung ist eine <em>Selbsteinschätzung</em> und soll dich zum Nachdenken anregen – nicht bewerten.</div>
+    </section>
+
+    <section class="card small">
+      <details>
+        <summary>Was wird hier gemessen?</summary>
+        <p>Die Fragen sind in sechs Bereiche gegliedert: Meinungsfreiheit, Gleichheit & Gerechtigkeit, Solidarität & Gemeinschaft, Mitbestimmung, Rechtsstaat & Fairness, Toleranz & Vielfalt. Aus deinen Antworten wird pro Bereich ein Durchschnitt berechnet (1–5). Niedrige Werte zeigen, wo du weiter nachdenken kannst.</p>
+      </details>
+    </section>
+
+  </div>
+
+<script>
+// ====== Datenbasis: Bereiche, Fragen, Feedback ======
+const AREAS = [
+  {
+    key: 'meinungsfreiheit',
+    title: 'Meinungsfreiheit',
+    questions: [
+      'Es ist mir wichtig, dass alle sagen dürfen, was sie denken – auch wenn ich anderer Meinung bin.',
+      'Wenn jemand etwas sagt, das mir nicht gefällt, sollte er oder sie trotzdem das Recht haben, es zu sagen.',
+      'In Social Media sollte man offen seine Meinung teilen dürfen, solange niemand beleidigt wird.',
+      'Ich finde es okay, wenn Menschen Kritik an Politik oder Schule äußern.'
+    ],
+    consequences: {
+      personal: 'Ohne Meinungsfreiheit könnten auch deine Posts, Musik oder Lieblings-Creator zensiert werden. Kritik in Schule oder Ausbildung wäre riskant.',
+      society: 'Weniger Meinungsfreiheit bedeutet weniger neue Ideen, weniger Kontrolle der Mächtigen und mehr Angst vor Strafe.'
+    }
+  },
+  {
+    key: 'gleichheit',
+    title: 'Gleichheit & Gerechtigkeit',
+    questions: [
+      'Alle Menschen sollten die gleichen Chancen haben – egal ob Mädchen oder Junge, reich oder arm.',
+      'Niemand sollte besser behandelt werden, nur weil er oder sie aus einer bestimmten Familie kommt.',
+      'Es ist unfair, wenn manche mehr mitbestimmen dürfen als andere.',
+      'Ich würde mich einsetzen, wenn jemand wegen Herkunft, Religion oder Aussehen ungerecht behandelt wird.'
+    ],
+    consequences: {
+      personal: 'Ohne gleiche Chancen kann es passieren, dass du bei Bewerbungen oder in der Schule benachteiligt wirst – nicht wegen Leistung, sondern wegen Herkunft, Geschlecht oder Geld.',
+      society: 'Ungleichheit schwächt den Zusammenhalt. Talente bleiben ungenutzt, Konflikte nehmen zu.'
+    }
+  },
+  {
+    key: 'solidaritaet',
+    title: 'Solidarität & Gemeinschaft',
+    questions: [
+      'Wenn jemand in meiner Klasse ausgeschlossen wird, finde ich das auch mein Problem – nicht nur seins.',
+      'Es ist mir wichtig, dass wir uns gegenseitig helfen, auch wenn ich selbst nichts davon habe.',
+      'Ich finde, man sollte sich um Menschen kümmern, denen es schlechter geht.',
+      'Wenn in meiner Schule etwas Ungerechtes passiert, will ich mich beteiligen, das zu ändern.'
+    ],
+    consequences: {
+      personal: 'Ohne Solidarität stehst du in schwierigen Zeiten allein da – z. B. bei Mobbing, Krankheit oder Geldsorgen.',
+      society: 'Wenig Solidarität macht eine Gesellschaft kalt: mehr Ausgrenzung, weniger Unterstützung, schwächere Demokratie.'
+    }
+  },
+  {
+    key: 'mitbestimmung',
+    title: 'Mitbestimmung & Beteiligung',
+    questions: [
+      'Ich finde es wichtig, dass Schüler*innen bei Entscheidungen in der Schule mitreden können.',
+      'Ich würde gerne mehr mitbestimmen, was in meiner Stadt oder Gemeinde passiert.',
+      'Ich traue mir zu, meine Meinung vor einer Gruppe zu sagen.',
+      'Ich finde, jeder sollte bei Wahlen mitbestimmen dürfen, wenn er alt genug ist.'
+    ],
+    consequences: {
+      personal: 'Ohne Beteiligung entscheiden andere über deinen Alltag – Stundenplan, Freizeitangebote, Busverbindungen – ohne deine Sicht.',
+      society: 'Wenig Mitbestimmung bedeutet Politik für wenige, nicht für alle. Entscheidungen werden schlechter und ungerechter.'
+    }
+  },
+  {
+    key: 'rechtsstaat',
+    title: 'Rechtsstaat & Fairness',
+    questions: [
+      'Regeln sind wichtig, damit alle gleich behandelt werden.',
+      'Auch wer Fehler gemacht hat, soll fair behandelt werden.',
+      'Ich finde es wichtig, dass Polizei und Gerichte sich an Gesetze halten müssen.',
+      'Wenn jemand ungerecht bestraft wird, sollte man etwas dagegen tun.'
+    ],
+    consequences: {
+      personal: 'Ohne faire Regeln kann jede/r willkürlich benachteiligt werden – Hausdurchsuchungen, Strafen oder Verbote ohne Grund.',
+      society: 'Ohne Rechtsstaat gibt es Machtmissbrauch, Korruption und Angst. Vertrauen bricht zusammen.'
+    }
+  },
+  {
+    key: 'toleranz',
+    title: 'Toleranz & Vielfalt',
+    questions: [
+      'Ich finde es gut, dass Menschen unterschiedlich denken und leben.',
+      'Ich kann mit Leuten befreundet sein, die ganz andere Ansichten haben.',
+      'Ich finde es spannend, Menschen aus anderen Ländern kennenzulernen.',
+      'Ich glaube, dass Streit über Meinungen normal ist – wichtig ist, wie man damit umgeht.'
+    ],
+    consequences: {
+      personal: 'Ohne Toleranz wird dein Umfeld eng: Freundschaften zerbrechen schneller, du verpasst Chancen und Perspektiven.',
+      society: 'Weniger Vielfalt heißt weniger Kreativität und mehr Konflikte zwischen Gruppen.'
+    }
+  }
+];
+
+// Skalenlegende
+const SCALE = [
+  {value:1,label:'1 – stimme gar nicht zu'},
+  {value:2,label:'2'},
+  {value:3,label:'3 – teils/teils'},
+  {value:4,label:'4'},
+  {value:5,label:'5 – stimme voll zu'}
+];
+
+// ====== Rendern ======
+const formEl = document.getElementById('quiz');
+
+function renderQuiz(){
+  formEl.innerHTML = '';
+  AREAS.forEach((area, ai)=>{
+    const sec = document.createElement('section');
+    sec.className = 'section';
+    sec.innerHTML = `<h2>${ai+1}. ${area.title}</h2>`;
+
+    area.questions.forEach((q, qi)=>{
+      const id = `${area.key}-${qi}`;
+      const qWrap = document.createElement('div');
+      qWrap.className = 'question';
+      qWrap.innerHTML = `
+        <div class="q-text">${q}</div>
+        <div class="scale" role="radiogroup" aria-label="${q}">
+          ${SCALE.map(s=>`
+            <label>
+              <input type="radio" name="${id}" value="${s.value}" aria-label="${s.label}" required />
+              <span>${s.value}</span>
+            </label>
+          `).join('')}
+        </div>
+      `;
+      sec.appendChild(qWrap);
+    });
+
+    formEl.appendChild(sec);
+  });
+}
+renderQuiz();
+
+// ====== Auswertung ======
+function getScores(){
+  const perArea = {};
+  let answered = 0, total = 0, sumAll = 0;
+  AREAS.forEach(area=>{
+    const values = [];
+    area.questions.forEach((_,qi)=>{
+      total++;
+      const name = `${area.key}-${qi}`;
+      const sel = document.querySelector(`input[name="${name}"]:checked`);
+      if(sel){
+        const v = Number(sel.value);
+        values.push(v); answered++; sumAll += v;
+      }
+    });
+    const avg = values.length ? values.reduce((a,b)=>a+b,0)/values.length : 0;
+    perArea[area.key] = {title: area.title, avg: Number(avg.toFixed(2)), values};
+  });
+  const overall = answered ? Number((sumAll/answered).toFixed(2)) : 0;
+  return {perArea, overall, answered, total};
+}
+
+function badgeFor(avg){
+  if(avg >= 4.2) return {cls:'good', text:'sehr stark demokratisch'};
+  if(avg >= 3.4) return {cls:'good', text:'eher demokratisch'};
+  if(avg >= 2.8) return {cls:'warn', text:'unentschieden / gemischt'};
+  if(avg >= 2.2) return {cls:'bad', text:'Distanz zu demokratischen Werten'};
+  return {cls:'bad', text:'Ablehnung demokratischer Werte'};
+}
+
+function feedbackBlocks(perArea){
+  // Konsequenzen bei niedrigen Werten
+  const blocks = [];
+  Object.values(perArea).forEach((a,i)=>{
+    const areaData = AREAS[i];
+    if(a.avg < 3){
+      blocks.push({
+        title: `${a.title}: Schau genauer hin`,
+        personal: areaData.consequences.personal,
+        society: areaData.consequences.society,
+        tips: [
+          'Sprich mit Freund*innen oder in der Klasse darüber – wie sehen andere das?',
+          'Suche ein Beispiel aus deinem Alltag und überlege: Was wäre anders, wenn dieser Wert fehlt?',
+          'Überlege, was du selbst tun kannst (z. B. Klassensprecherwahl, Hilfe bei Ausgrenzung, fairer Umgang im Chat).'
+        ]
+      });
+    }
+  });
+  return blocks;
+}
+
+function renderResults(){
+  const {perArea, overall, answered, total} = getScores();
+  if(answered < total){
+    alert(`Bitte alle Fragen beantworten (noch ${total-answered} offen).`);
+    return;
+  }
+  const results = document.getElementById('results');
+  const overallEl = document.getElementById('overall');
+  const badgesEl = document.getElementById('badges');
+  const grid = document.getElementById('scoreGrid');
+  const feedback = document.getElementById('feedback');
+
+  const overallBadge = badgeFor(overall);
+  overallEl.innerHTML = `Gesamt: <strong>${overall.toFixed(2)}</strong> von 5 · <span class="badge ${overallBadge.cls}">${overallBadge.text}</span>`;
+
+  // pro Bereich
+  grid.innerHTML = '';
+  badgesEl.innerHTML = '';
+  Object.entries(perArea).forEach(([key, data], idx)=>{
+    const bdg = badgeFor(data.avg);
+    const card = document.createElement('div');
+    card.className = 'scorecard';
+    card.innerHTML = `
+      <h3>${AREAS[idx].title}</h3>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div>Ø <strong>${data.avg.toFixed(2)}</strong> / 5</div>
+        <div class="badge ${bdg.cls}">${bdg.text}</div>
+      </div>
+      <div class="small" style="margin-top:6px">Fragenwerte: ${data.values.join(' • ')}</div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // individuelles Feedback
+  const blocks = feedbackBlocks(perArea);
+  feedback.innerHTML = '';
+  if(blocks.length===0){
+    const ok = document.createElement('div');
+    ok.className = 'card';
+    ok.innerHTML = `<p><strong>Stark!</strong> Deine Antworten zeigen eine klare Orientierung an demokratischen Werten. Überlege, wo du dich einbringen möchtest (Schülervertretung, Jugendrat, Projekte).</p>`;
+    feedback.appendChild(ok);
+  } else {
+    blocks.forEach(b=>{
+      const el = document.createElement('div');
+      el.className = 'card';
+      el.innerHTML = `
+        <h3>${b.title}</h3>
+        <p><strong>Was bedeutet das für dich?</strong> ${b.personal}</p>
+        <p><strong>Was bedeutet das für die Gesellschaft?</strong> ${b.society}</p>
+        <p><strong>Ideen zum Weiterdenken:</strong></p>
+        <ul>${b.tips.map(t=>`<li>${t}</li>`).join('')}</ul>
+      `;
+      feedback.appendChild(el);
+    });
+  }
+
+  results.style.display = 'block';
+  results.scrollIntoView({behavior:'smooth'});
+}
+
+// ====== Buttons ======
+const submitBtn = document.getElementById('submitBtn');
+const resetBtn = document.getElementById('resetBtn');
+const printBtn = document.getElementById('printBtn');
+
+submitBtn.addEventListener('click', renderResults);
+
+resetBtn.addEventListener('click', ()=>{
+  if(confirm('Alle Antworten löschen?')){
+    document.querySelectorAll('#quiz input[type="radio"]').forEach(i=>i.checked=false);
+    document.getElementById('results').style.display='none';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+});
+
+printBtn.addEventListener('click', ()=>window.print());
+</script>
+</body>
+</html>
